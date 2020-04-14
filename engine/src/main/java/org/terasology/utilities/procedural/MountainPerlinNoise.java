@@ -21,11 +21,11 @@ import org.terasology.math.geom.Vector2f;
 
 /**
  * Improved Perlin noise based on the reference implementation by Ken Perlin.
- * @deprecated Prefer using {@link SimplexNoise}, it is comparable to Perlin noise (fewer directional artifacts, lower computational overhead for higher dimensions).
  *
+ * @deprecated Prefer using {@link SimplexNoise}, it is comparable to Perlin noise (fewer directional artifacts, lower computational overhead for higher dimensions).
  */
-@Deprecated
-public class MountainPerlinNoise extends AbstractNoise implements Noise2D {
+//@Deprecated
+public class MountainPerlinNoise implements Noise2D {
 
     //prolly will have to play with this as current noise can return more than 1
     private Vector2f[][] grid;
@@ -37,13 +37,15 @@ public class MountainPerlinNoise extends AbstractNoise implements Noise2D {
      */
     public MountainPerlinNoise(long seed) {
         FastRandom rand = new FastRandom(seed);
-        Vector2f[][] grid = new Vector2f[2][2];
-        for (int i=0; i<=1; i++) {
-            for (int j = 0; j <= 1; j++) {
-                float angle = rand.nextFloat(10.0f, 80.0f);
-                grid[i][j].set((float) Math.cos(angle), (float) Math.sin(angle));
-            }
-        }
+        grid = new Vector2f[2][2];
+        float angle = (float) Math.toRadians(rand.nextFloat(10.0f, 80.0f));
+        grid[0][0] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(100.0f, 170.0f));
+        grid[1][0] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(190.0f, 260.0f));
+        grid[0][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(280.0f, 350.0f));
+        grid[1][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
     }
 
     /**
@@ -56,18 +58,20 @@ public class MountainPerlinNoise extends AbstractNoise implements Noise2D {
      */
     @Override
     public float noise(float posX, float posY) {
+        posX = posX - TeraMath.fastFloor(posX);
+        posY = posY - TeraMath.fastFloor(posY);
 
         Vector2f point = new Vector2f(posX, posY);
-        float[][] gradients = new float[2][2];
+        float[][] dots = new float[2][2];
 
-        for (int i=0; i<=1; i++) {
+        for (int i = 0; i <= 1; i++) {
             for (int j = 0; j <= 1; j++) {
-                gradients[i][j] = grid[i][j].dot(point);
+                dots[i][j] = grid[i][j].dot(point);
             }
         }
 
-        float top = TeraMath.lerp(gradients[0][0], gradients[1][0], posX);
-        float bottom = TeraMath.lerp(gradients[0][1], gradients[1][1], posX);
+        float top = TeraMath.lerp(dots[0][0], dots[1][0], posX);
+        float bottom = TeraMath.lerp(dots[0][1], dots[1][1], posX);
 
         return TeraMath.lerp(top, bottom, posY);
     }
