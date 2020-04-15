@@ -15,6 +15,8 @@
  */
 package org.terasology.utilities.procedural;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.terasology.math.TeraMath;
 import org.terasology.utilities.random.FastRandom;
 import org.terasology.math.geom.Vector2f;
@@ -29,6 +31,7 @@ public class MountainPerlinNoise implements Noise2D {
 
     //prolly will have to play with this as current noise can return more than 1
     private Vector2f[][] grid;
+    private static final Logger logger = LoggerFactory.getLogger(MountainPerlinNoise.class);
 
     /**
      * Init. a new generator with a given seed value.
@@ -37,15 +40,31 @@ public class MountainPerlinNoise implements Noise2D {
      */
     public MountainPerlinNoise(long seed) {
         FastRandom rand = new FastRandom(seed);
-        grid = new Vector2f[2][2];
+        grid = new Vector2f[4][4];
         float angle = (float) Math.toRadians(rand.nextFloat(10.0f, 80.0f));
-        grid[0][0] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
-        angle = (float) Math.toRadians(rand.nextFloat(100.0f, 170.0f));
-        grid[1][0] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
-        angle = (float) Math.toRadians(rand.nextFloat(190.0f, 260.0f));
-        grid[0][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
-        angle = (float) Math.toRadians(rand.nextFloat(280.0f, 350.0f));
         grid[1][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(100.0f, 170.0f));
+        grid[2][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(190.0f, 260.0f));
+        grid[1][2] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(280.0f, 350.0f));
+        grid[2][2] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                if (i == 0 | i == 3 | j == 0 | j == 3) {
+                    grid[i][j] = new Vector2f(0f, 0f);
+                    if (i == 0)
+                        grid[i][j].setX(-1);
+                    else if (i == 3)
+                        grid[i][j].setX(1);
+                    if (j == 0)
+                        grid[i][j].setY(-1);
+                    else if (j == 3)
+                        grid[i][j].setY(1);
+                    // not normalizing as i feel corner diagonals should be longer vectors to ensure polar uniformity
+                }
+
     }
 
     /**
@@ -53,7 +72,6 @@ public class MountainPerlinNoise implements Noise2D {
      *
      * @param posX Position on the x-axis
      * @param posY Position on the y-axis
-     * @param posZ Position on the z-axis
      * @return The noise value
      */
     @Override
@@ -61,18 +79,29 @@ public class MountainPerlinNoise implements Noise2D {
         posX = posX - TeraMath.fastFloor(posX);
         posY = posY - TeraMath.fastFloor(posY);
 
-        Vector2f point = new Vector2f(posX, posY);
         float[][] dots = new float[2][2];
+
+        float scaledX = posX * 3;
+        float scaledY = posY * 3;
+
+        Vector2f point = new Vector2f(scaledX, scaledY);
+
+        int lBoundX = (int) scaledX;
+        int lBoundY = (int) scaledY;
 
         for (int i = 0; i <= 1; i++) {
             for (int j = 0; j <= 1; j++) {
-                dots[i][j] = grid[i][j].dot(point);
+                Vector2f temp = new Vector2f(point);
+                int gridI = i + lBoundX;
+                int gridJ = j + lBoundY;
+                dots[i][j] = grid[gridI][gridJ].dot(temp.sub(new Vector2f(gridI, gridJ)));
             }
         }
 
-        float top = TeraMath.lerp(dots[0][0], dots[1][0], posX);
-        float bottom = TeraMath.lerp(dots[0][1], dots[1][1], posX);
+        float top = TeraMath.lerp(dots[0][0], dots[1][0], scaledX - lBoundX);
+        float bottom = TeraMath.lerp(dots[0][1], dots[1][1], scaledX - lBoundX);
 
-        return TeraMath.lerp(top, bottom, posY);
+        float ret = TeraMath.lerp(top, bottom, scaledY - lBoundY);
+        return Math.max(ret, 0f);
     }
 }
