@@ -29,6 +29,7 @@ import org.terasology.math.geom.Vector2f;
 //@Deprecated
 public class MountainPerlinNoise implements Noise2D {
 
+    private float falloffRate = 5.0f;
     //prolly will have to play with this as current noise can return more than 1
     private Vector2f[][] grid;
     private static final Logger logger = LoggerFactory.getLogger(MountainPerlinNoise.class);
@@ -45,9 +46,9 @@ public class MountainPerlinNoise implements Noise2D {
         grid[1][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
         angle = (float) Math.toRadians(rand.nextFloat(100.0f, 170.0f));
         grid[2][1] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
-        angle = (float) Math.toRadians(rand.nextFloat(190.0f, 260.0f));
-        grid[1][2] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
         angle = (float) Math.toRadians(rand.nextFloat(280.0f, 350.0f));
+        grid[1][2] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        angle = (float) Math.toRadians(rand.nextFloat(190.0f, 260.0f));
         grid[2][2] = new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
 
         for (int i = 0; i < 4; i++)
@@ -55,13 +56,13 @@ public class MountainPerlinNoise implements Noise2D {
                 if (i == 0 | i == 3 | j == 0 | j == 3) {
                     grid[i][j] = new Vector2f(0f, 0f);
                     if (i == 0)
-                        grid[i][j].setX(-1);
+                        grid[i][j].setX(-1).div(falloffRate);
                     else if (i == 3)
-                        grid[i][j].setX(1);
+                        grid[i][j].setX(1).div(falloffRate);
                     if (j == 0)
-                        grid[i][j].setY(-1);
+                        grid[i][j].setY(-1).div(falloffRate);
                     else if (j == 3)
-                        grid[i][j].setY(1);
+                        grid[i][j].setY(1).div(falloffRate);
                     // not normalizing as i feel corner diagonals should be longer vectors to ensure polar uniformity
                 }
 
