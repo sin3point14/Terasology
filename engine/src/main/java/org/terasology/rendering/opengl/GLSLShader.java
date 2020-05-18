@@ -287,6 +287,7 @@ public class GLSLShader extends Shader {
         }
 
         shader.append("\n");
+
         shader.append(includedDefines);
         shader.append(includedUniforms);
 
